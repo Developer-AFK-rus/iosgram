@@ -13,8 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Если в репозиторий залит только ZIP проекта (без распакованных папок), распаковываем его здесь.
-      - name: Найти проект
+      # If only the project ZIP was uploaded, unpack it here.
+      - name: Find project
         run: |
           if [ ! -f settings.gradle.kts ] && ls ./*.zip >/dev/null 2>&1; then
             unzip -q -o "$(ls ./*.zip | head -n1)" -d _proj
@@ -35,7 +35,7 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Сборка debug APK
+      - name: Build debug APK
         working-directory: ${{ env.PROJECT_DIR }}
         run: gradle assembleDebug --no-daemon --stacktrace
 
@@ -45,7 +45,7 @@ jobs:
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      - name: Прикрепить APK к релизу (только для тегов)
+      - name: Attach APK to release (tags only)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
