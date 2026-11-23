@@ -4,49 +4,21 @@ on:
   push:
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      # If only the project ZIP was uploaded, unpack it here.
-      - name: Find project
-        run: |
-          if [ ! -f settings.gradle.kts ] && ls ./*.zip >/dev/null 2>&1; then
-            unzip -q -o "$(ls ./*.zip | head -n1)" -d _proj
-            ROOT="$(dirname "$(find _proj -name settings.gradle.kts | head -n1)")"
-            echo "PROJECT_DIR=$ROOT" >> "$GITHUB_ENV"
-          else
-            echo "PROJECT_DIR=." >> "$GITHUB_ENV"
-          fi
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - uses: android-actions/setup-android@v3
-
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-
-      - name: Build debug APK
-        working-directory: ${{ env.PROJECT_DIR }}
-        run: gradle assembleDebug --no-daemon --stacktrace
-
+      - run: gradle assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: Companion-debug-apk
-          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-
-      - name: Attach APK to release (tags only)
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*.apk
